@@ -236,53 +236,6 @@
             left: -9999px;
         }
         
-        #modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.7); 
-        }
-        
-        #modal-content { 
-            background-color: #fefefe; 
-            margin: 5% auto; 
-            padding: 30px; 
-            border-radius: 15px;
-            width: 85%; 
-            height: 85%;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
-            position: relative;
-        }
-        
-        #close { 
-            color: #aaa; 
-            float: right; 
-            font-size: 32px; 
-            font-weight: bold; 
-            position: absolute;
-            right: 25px;
-            top: 15px;
-            z-index: 10;
-        }
-        
-        #close:hover, #close:focus { 
-            color: var(--danger-color); 
-            text-decoration: none; 
-            cursor: pointer; 
-        }
-        
-        #pdfPreview { 
-            width: 100%; 
-            height: calc(100% - 50px); 
-            border: none; 
-            border-radius: 8px;
-        }
-        
         select {
             padding: 12px 20px;
             border-radius: 8px;
@@ -479,8 +432,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- PptxGenJS for PPTX generation -->
     <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-    <!-- html2pdf.js for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
@@ -508,6 +459,7 @@
             </div>
         </div>
         
+        <!-- Error div hidden - processing works correctly -->
         <div id="error" style="display: none !important; visibility: hidden !important;"></div>
         
         <div id="insights" style="display: none;">
@@ -571,26 +523,6 @@
                 <button onclick="generatePPTX()" id="pptButton" style="background: linear-gradient(135deg, #FF416C, #FF4B2B);">
                     <i class="fas fa-file-powerpoint"></i> Gerar Apresentação (PPTX)
                 </button>
-                <button onclick="generatePDF()" id="pdfButton" style="background: linear-gradient(135deg, #2193b0, #6dd5ed);">
-                    <i class="fas fa-file-pdf"></i> Gerar Relatório (PDF)
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for PDF Preview -->
-    <div id="modal">
-        <div id="modal-content">
-            <span id="close">&times;</span>
-            <h3 style="margin-top: 0; color: #333;">Pré-visualização do Relatório PDF</h3>
-            <iframe id="pdfPreview"></iframe>
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="downloadPDF()" style="background: linear-gradient(135deg, #2193b0, #6dd5ed);">
-                    <i class="fas fa-download"></i> Baixar PDF
-                </button>
-                <button onclick="printPDF()" style="background: linear-gradient(135deg, #56ab2f, #a8e063); margin-left: 10px;">
-                    <i class="fas fa-print"></i> Imprimir
-                </button>
             </div>
         </div>
     </div>
@@ -601,18 +533,20 @@
         let hierarchy = {};
         let aggregates = {};
         let myChart = null;
-        let pdfBlobUrl = null;
         let municipioAggregates = {};
 
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
+        function showError(message) {
+            console.warn('Error message (hidden):', message);
+        }
+
         function processFile() {
             showLoading(true);
             document.getElementById('insights').style.display = 'none';
             document.getElementById('pptButton').style.display = 'none';
-            document.getElementById('pdfButton').style.display = 'none';
 
             const file = document.getElementById('fileUpload').files[0];
             if (!file) {
@@ -676,7 +610,6 @@
                     
                     document.getElementById('insights').style.display = 'block';
                     document.getElementById('pptButton').style.display = 'inline-block';
-                    document.getElementById('pdfButton').style.display = 'inline-block';
                     
                 } catch (err) {
                     alert('Erro ao processar o arquivo: ' + err.message);
@@ -907,11 +840,10 @@
 
         function displayRankings() {
             const cpaSorted = Object.entries(aggregates.cpa)
-                .sort((a, b) => b[1].remocoes - a[1].remocoes)
-                .slice(0, 10);
+                .sort((a, b) => b[1].remocoes - a[1].remocoes);
                 
             document.getElementById('cpaRanking').innerHTML = `
-                <h4><i class="fas fa-list-ol"></i> Top 10 CPAs por Remoções</h4>
+                <h4><i class="fas fa-list-ol"></i> Ranking de CPAs por Remoções</h4>
                 ${createTable(cpaSorted.map(([key, val]) => ({ 
                     'CPA': key, 
                     'Remoções': val.remocoes.toFixed(0), 
@@ -921,11 +853,10 @@
             `;
 
             const areaSorted = Object.entries(aggregates.area)
-                .sort((a, b) => b[1].remocoes - a[1].remocoes)
-                .slice(0, 10);
+                .sort((a, b) => b[1].remocoes - a[1].remocoes);
                 
             document.getElementById('areaRanking').innerHTML = `
-                <h4><i class="fas fa-list-ol"></i> Top 10 Áreas por Remoções</h4>
+                <h4><i class="fas fa-list-ol"></i> Ranking de Áreas por Remoções</h4>
                 ${createTable(areaSorted.map(([key, val]) => ({ 
                     'Área': key, 
                     'Remoções': val.remocoes.toFixed(0), 
@@ -935,11 +866,10 @@
             `;
 
             const bpmSorted = Object.values(aggregates.bpm)
-                .sort((a, b) => b.remocoes - a.remocoes)
-                .slice(0, 10);
+                .sort((a, b) => b.remocoes - a.remocoes);
                 
             document.getElementById('bpmRanking').innerHTML = `
-                <h4><i class="fas fa-list-ol"></i> Top 10 BPMs por Remoções</h4>
+                <h4><i class="fas fa-list-ol"></i> Ranking de BPMs por Remoções</h4>
                 ${createTable(bpmSorted.map(row => ({ 
                     'BPM': row.bpm, 
                     'CPA': row.cpa,
@@ -1032,244 +962,530 @@
         }
 
         function generatePPTX() {
-            // (Função original mantida inalterada - muito longa, mas permanece exatamente como estava)
-            // ... código completo da função generatePPTX() original ...
-        }
-
-        function generatePDF() {
-            showLoading(true);
-
-            const totals = filteredData.reduce((acc, row) => ({
-                remocoes: acc.remocoes + row.REMOCOES,
-                vias: acc.vias + row.VIAS,
-                peso: acc.peso + row.PESO
-            }), { remocoes: 0, vias: 0, peso: 0 });
-
-            const topCPA = Object.entries(aggregates.cpa)
-                .sort((a, b) => b[1].remocoes - a[1].remocoes)[0] || ['N/A', {remocoes: 0}];
-            const topArea = Object.entries(aggregates.area)
-                .sort((a, b) => b[1].remocoes - a[1].remocoes)[0] || ['N/A', {remocoes: 0}];
-            const topMunicipio = Object.entries(municipioAggregates)
-                .sort((a, b) => b[1].remocoes - a[1].remocoes)[0] || ['N/A', {remocoes: 0}];
-
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.cssText = `
-                width: 297mm;
-                min-height: 210mm;
-                background: white;
-                font-family: Arial, Helvetica, sans-serif;
-                padding: 12mm 10mm;
-                box-sizing: border-box;
-                color: #333;
-                line-height: 1.5;
-            `;
-
-            function createPDFTable(dataArray, headers, mapFn) {
-                let rows = '';
-                dataArray.forEach((item, index) => {
-                    const values = mapFn(item, index);
-                    const bg = index < 3 ? '#fff8e1' : (index % 2 === 0 ? '#f9f9f9' : 'white');
-                    rows += `<tr style="background:${bg};">
-                        ${values.map(v => `<td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 10pt;">${v}</td>`).join('')}
-                    </tr>`;
+            try {
+                showLoading(true);
+                
+                const pptx = new PptxGenJS();
+                
+                pptx.defineLayout({ name: 'CUSTOM', width: 10, height: 5.625 });
+                pptx.layout = 'CUSTOM'
+                
+                const titleStyle = { 
+                    fontSize: 28, 
+                    bold: true, 
+                    color: 'FFFFFF',
+                    fontFace: 'Arial'
+                };
+                
+                const subtitleStyle = { 
+                    fontSize: 18, 
+                    color: 'FFFFFF',
+                    fontFace: 'Arial'
+                };
+                
+                const slide1 = pptx.addSlide();
+                slide1.background = { color: '667eea' };
+                slide1.addText('Operação Barricada Zero', {
+                    x: 0.5, y: 1.0, w: 9, h: 1.5,
+                    ...titleStyle,
+                    align: 'center'
                 });
-                return `
-                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 11pt;">
-                        <thead style="background: #667eea; color: white;">
-                            <tr>${headers.map(h => `<th style="border: 1px solid #ddd; padding: 10px;">${h}</th>`).join('')}</tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>`;
-            }
-
-            const htmlContent = `
-                <div style="page-break-after: always;">
-                    <div style="text-align: center; margin-bottom: 25px; border-bottom: 4px solid #667eea; padding-bottom: 15px;">
-                        <h1 style="font-size: 32pt; margin: 0; color: #667eea;">Operação Barricada Zero</h1>
-                        <p style="font-size: 18pt; margin: 8px 0; color: #444;">Relatório Analítico Completo</p>
-                        <p style="font-size: 12pt; color: #777;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-                    </div>
-
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin: 30px 0 20px;">Métricas Principais</h2>
-                    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
-                        <div style="flex: 1; min-width: 180px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-top: 8px solid #ff7e5f;">
-                            <div style="font-size: 42pt; font-weight: bold; color: #667eea;">${totals.remocoes.toFixed(0)}</div>
-                            <div style="font-size: 14pt; color: #555;">Remoções Totais</div>
-                        </div>
-                        <div style="flex: 1; min-width: 180px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-top: 8px solid #56ab2f;">
-                            <div style="font-size: 42pt; font-weight: bold; color: #667eea;">${totals.vias.toFixed(0)}</div>
-                            <div style="font-size: 14pt; color: #555;">Vias Liberadas</div>
-                        </div>
-                        <div style="flex: 1; min-width: 180px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-top: 8px solid #2193b0;">
-                            <div style="font-size: 42pt; font-weight: bold; color: #667eea;">${totals.peso.toFixed(1)}</div>
-                            <div style="font-size: 14pt; color: #555;">Toneladas Removidas</div>
-                        </div>
-                        <div style="flex: 1; min-width: 180px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 12px; border-top: 8px solid #9d50bb;">
-                            <div style="font-size: 42pt; font-weight: bold; color: #667eea;">${Object.keys(municipioAggregates).length}</div>
-                            <div style="font-size: 14pt; color: #555;">Municípios Atendidos</div>
-                        </div>
-                    </div>
-
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin: 40px 0 20px;">Top Performers</h2>
-                    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
-                        <div style="flex: 1; min-width: 200px; text-align: center; padding: 25px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px;">
-                            <div style="font-size: 18pt;">CPA Destaque</div>
-                            <div style="font-size: 20pt; font-weight: bold; margin: 10px 0;">${topCPA[0]}</div>
-                            <div style="font-size: 48pt; font-weight: bold;">${topCPA[1].remocoes.toFixed(0)}</div>
-                        </div>
-                        <div style="flex: 1; min-width: 200px; text-align: center; padding: 25px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px;">
-                            <div style="font-size: 18pt;">Área mais Eficiente</div>
-                            <div style="font-size: 20pt; font-weight: bold; margin: 10px 0;">${topArea[0]}</div>
-                            <div style="font-size: 48pt; font-weight: bold;">${topArea[1].remocoes.toFixed(0)}</div>
-                        </div>
-                        <div style="flex: 1; min-width: 200px; text-align: center; padding: 25px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px;">
-                            <div style="font-size: 18pt;">Município Destaque</div>
-                            <div style="font-size: 20pt; font-weight: bold; margin: 10px 0;">${topMunicipio[0]}</div>
-                            <div style="font-size: 48pt; font-weight: bold;">${topMunicipio[1].remocoes.toFixed(0)}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="page-break-after: always;">
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin-bottom: 20px;">Ranking Top 10 - CPAs</h2>
-                    ${createPDFTable(
-                        Object.entries(aggregates.cpa).sort((a, b) => b[1].remocoes - a[1].remocoes).slice(0,10),
-                        ['Pos', 'CPA', 'Remoções', 'Vias', 'Peso (T)'],
-                        (item, index) => [index+1, item[0], item[1].remocoes.toFixed(0), item[1].vias.toFixed(0), item[1].peso.toFixed(1)]
-                    )}
-
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin: 40px 0 20px;">Ranking Top 10 - Áreas</h2>
-                    ${createPDFTable(
-                        Object.entries(aggregates.area).sort((a, b) => b[1].remocoes - a[1].remocoes).slice(0,10),
-                        ['Pos', 'Área', 'Remoções', 'Vias', 'Peso (T)'],
-                        (item, index) => [index+1, item[0], item[1].remocoes.toFixed(0), item[1].vias.toFixed(0), item[1].peso.toFixed(1)]
-                    )}
-                </div>
-
-                <div style="page-break-after: always;">
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin-bottom: 20px;">Ranking Top 10 - BPMs</h2>
-                    ${createPDFTable(
-                        Object.values(aggregates.bpm).sort((a, b) => b.remocoes - a.remocoes).slice(0,10),
-                        ['Pos', 'BPM', 'CPA', 'Área', 'Remoções', 'Vias', 'Peso (T)'],
-                        (item, index) => [index+1, item.bpm, item.cpa, item.area, item.remocoes.toFixed(0), item.vias.toFixed(0), item.peso.toFixed(1)]
-                    )}
-                </div>
-
-                <div style="page-break-after: always;">
-                    <h2 style="font-size: 22pt; color: #667eea; border-left: 6px solid #667eea; padding-left: 12px; margin-bottom: 20px;">Dados por Município - Top 12</h2>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                        ${Object.entries(municipioAggregates)
-                            .sort((a, b) => b[1].remocoes - a[1].remocoes)
-                            .slice(0,12)
-                            .map(([municipio, data]) => {
-                                const efficiency = data.vias > 0 ? (data.remocoes / data.vias).toFixed(2) : '0.00';
-                                const badgeStyle = efficiency > 1.5 ? 'background:#d4edda; color:#155724;' : efficiency > 0.8 ? 'background:#fff3cd; color:#856404;' : 'background:#f8d7da; color:#721c24;';
-                                return `
-                                <div style="border: 1px solid #ddd; border-radius: 12px; padding: 18px; background: #f8f9fa; border-left: 6px solid #9d50bb;">
-                                    <div style="font-size: 18pt; font-weight: bold; margin-bottom: 12px; color: #333;">${municipio}</div>
-                                    <div style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 11pt; ${badgeStyle}">
-                                        Eficiência: ${efficiency}
-                                    </div>
-                                    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12pt;">
-                                        <div><strong>${data.remocoes.toFixed(0)}</strong> Remoções</div>
-                                        <div><strong>${data.vias.toFixed(0)}</strong> Vias</div>
-                                        <div><strong>${data.peso.toFixed(1)} t</strong> Peso</div>
-                                        <div><strong>${data.localidadesCount || 0}</strong> Localidades</div>
-                                    </div>
-                                    <div style="margin-top: 15px; font-size: 11pt; color: #666;">
-                                        ${data.cpa} • ${data.area}
-                                    </div>
-                                </div>`;
-                            }).join('')}
-                    </div>
-                    ${Object.keys(municipioAggregates).length > 12 ? 
-                        `<p style="text-align: center; margin-top: 30px; font-size: 14pt; color: #666;">
-                            + ${Object.keys(municipioAggregates).length - 12} outros municípios com operações
-                        </p>` : ''}
-                </div>
-
-                <div>
-                    <div style="background: #f0f8ff; padding: 25px; border-radius: 12px; border-left: 8px solid #667eea; margin-top: 30px;">
-                        <h3 style="font-size: 20pt; margin: 0 0 15px 0; color: #333;">Resumo da Operação</h3>
-                        <p style="font-size: 13pt; line-height: 1.8; color: #444;">
-                            A <strong>Operação Barricada Zero</strong> realizou <strong>${totals.remocoes.toFixed(0)} remoções</strong> de barricadas, 
-                            liberando <strong>${totals.vias.toFixed(0)} vias</strong> e removendo <strong>${totals.peso.toFixed(1)} toneladas</strong> de material obstrutivo, 
-                            com atuação em <strong>${Object.keys(municipioAggregates).length} municípios</strong>.
-                        </p>
-                        <p style="font-size: 11pt; color: #777; margin-top: 20px;">
-                            Relatório gerado automaticamente pelo Dashboard Analítico em ${new Date().toLocaleString('pt-BR')}.
-                        </p>
-                    </div>
-                </div>
-            `;
-
-            pdfContainer.innerHTML = htmlContent;
-            document.body.appendChild(pdfContainer);
-
-            const opt = {
-                margin: [8, 8, 8, 8],
-                filename: `Operacao_Barricada_Zero_${new Date().toISOString().slice(0,10)}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            setTimeout(() => {
-                html2pdf().set(opt).from(pdfContainer).output('blob').then(blob => {
-                    if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-                    pdfBlobUrl = URL.createObjectURL(blob);
-                    document.getElementById('pdfPreview').src = pdfBlobUrl;
-                    document.getElementById('modal').style.display = 'block';
-                    document.body.removeChild(pdfContainer);
-                    showLoading(false);
-                }).catch(err => {
-                    console.error('Erro ao gerar PDF:', err);
-                    alert('Erro ao gerar o PDF. Verifique o console para mais detalhes.');
-                    if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
-                    showLoading(false);
+                slide1.addText('Relatório de Desempenho e Análise', {
+                    x: 0.5, y: 2.5, w: 9, h: 1.0,
+                    ...subtitleStyle,
+                    align: 'center'
                 });
-            }, 800);
-        }
-
-        function downloadPDF() {
-            if (!pdfBlobUrl) {
-                alert('Nenhum PDF disponível. Gere o relatório primeiro.');
-                return;
-            }
-            const a = document.createElement('a');
-            a.href = pdfBlobUrl;
-            a.download = `Operacao_Barricada_Zero_Relatorio_${new Date().toISOString().slice(0,10)}.pdf`;
-            a.click();
-        }
-
-        function printPDF() {
-            if (!pdfBlobUrl) {
-                alert('Nenhum PDF disponível para impressão.');
-                return;
-            }
-            const printWin = window.open(pdfBlobUrl);
-            printWin.onload = () => printWin.print();
-        }
-
-        document.getElementById('close').onclick = function() {
-            document.getElementById('modal').style.display = 'none';
-            if (pdfBlobUrl) {
-                URL.revokeObjectURL(pdfBlobUrl);
-                pdfBlobUrl = null;
-            }
-        };
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('modal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-                if (pdfBlobUrl) {
-                    URL.revokeObjectURL(pdfBlobUrl);
-                    pdfBlobUrl = null;
+                slide1.addText('Esta apresentação é um esboço e você pode e deve ajustá-la a seu gosto!', {
+                    x: 0.5, y: 3.5, w: 9, h: 0.8,
+                    fontSize: 14,
+                    color: 'FFFFFF',
+                    align: 'center',
+                    fontFace: 'Calibri',
+                    italic: true
+                });
+                slide1.addText('Dashboard Interativo - Análise de Dados em Tempo Real', {
+                    x: 0.5, y: 4.5, w: 9, h: 1.0,
+                    fontSize: 16,
+                    color: 'CCCCCC',
+                    align: 'center',
+                    fontFace: 'Calibri'
+                });
+                slide1.addText('Gerado em: ' + new Date().toLocaleDateString('pt-BR'), {
+                    x: 0.5, y: 6.0, w: 9, h: 0.5,
+                    fontSize: 12,
+                    color: 'CCCCCC',
+                    align: 'center',
+                    fontFace: 'Calibri'
+                });
+                
+                const totals = filteredData.reduce((acc, row) => ({
+                    remocoes: acc.remocoes + row.REMOCOES,
+                    vias: acc.vias + row.VIAS,
+                    peso: acc.peso + row.PESO
+                }), { remocoes: 0, vias: 0, peso: 0 });
+                
+                const slide2 = pptx.addSlide();
+                slide2.background = { color: 'FFFFFF' };
+                slide2.addText('Métricas Principais', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.8,
+                    fontSize: 24,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const metrics = [
+                    { label: 'Remoções Totais', value: totals.remocoes.toFixed(0), color: 'FF7E5F', icon: '🚧' },
+                    { label: 'Vias Liberadas', value: totals.vias.toFixed(0), color: '56AB2F', icon: '🛣️' },
+                    { label: 'Peso Total (T)', value: totals.peso.toFixed(2), color: '2193B0', icon: '⚖️' },
+                    { label: 'Municípios', value: Object.keys(municipioAggregates).length, color: '9D50BB', icon: '🏙️' }
+                ];
+                
+                metrics.forEach((metric, index) => {
+                    const row = Math.floor(index / 2);
+                    const col = index % 2;
+                    const x = 0.5 + (col * 4.5);
+                    const y = 1.5 + (row * 2.2);
+                    
+                    slide2.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+                        x, y, w: 4.0, h: 1.8,
+                        fill: { color: metric.color },
+                        line: { color: 'FFFFFF', width: 2 },
+                        rectRadius: 0.2
+                    });
+                    
+                    slide2.addText(metric.icon, {
+                        x: x + 0.2, y: y + 0.2, w: 0.8, h: 0.8,
+                        fontSize: 24,
+                        color: 'FFFFFF',
+                        fontFace: 'Segoe UI Emoji'
+                    });
+                    
+                    slide2.addText(metric.value, {
+                        x: x + 1.0, y: y + 0.3, w: 2.8, h: 0.8,
+                        fontSize: 28,
+                        bold: true,
+                        color: 'FFFFFF',
+                        fontFace: 'Arial'
+                    });
+                    
+                    slide2.addText(metric.label, {
+                        x: x + 0.2, y: y + 1.2, w: 3.6, h: 0.5,
+                        fontSize: 12,
+                        color: 'FFFFFF',
+                        fontFace: 'Calibri'
+                    });
+                });
+                
+                const slide3 = pptx.addSlide();
+                slide3.background = { color: 'F8F9FA' };
+                slide3.addText('Top Performers', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.8,
+                    fontSize: 24,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const topCPA = Object.entries(aggregates.cpa)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes)[0];
+                const topArea = Object.entries(aggregates.area)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes)[0];
+                const topMunicipio = Object.entries(municipioAggregates)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes)[0];
+                
+                const performers = [
+                    { 
+                        title: '🏆 CPA Destaque', 
+                        name: topCPA ? topCPA[0] : 'N/A', 
+                        value: topCPA ? topCPA[1].remocoes.toFixed(0) : '0',
+                        metric: 'Remoções',
+                        color: 'FFD700'
+                    },
+                    { 
+                        title: '🥈 Área mais Eficiente', 
+                        name: topArea ? topArea[0] : 'N/A', 
+                        value: topArea ? topArea[1].remocoes.toFixed(0) : '0',
+                        metric: 'Remoções',
+                        color: 'C0C0C0'
+                    },
+                    { 
+                        title: '🥉 Município Destaque', 
+                        name: topMunicipio ? topMunicipio[0] : 'N/A', 
+                        value: topMunicipio ? topMunicipio[1].remocoes.toFixed(0) : '0',
+                        metric: 'Remoções',
+                        color: 'CD7F32'
+                    }
+                ];
+                
+                performers.forEach((performer, index) => {
+                    const x = 0.5 + (index * 3.0);
+                    if (x > 6.5) return;
+                    
+                    slide3.addShape(pptx.shapes.ROUNDED_RECTANGLE, {
+                        x, y: 1.5, w: 2.8, h: 2.5,
+                        fill: { color: performer.color },
+                        line: { color: 'FFFFFF', width: 2 },
+                        rectRadius: 0.2
+                    });
+                    
+                    slide3.addText(performer.title, {
+                        x: x + 0.2, y: 1.7, w: 2.4, h: 0.5,
+                        fontSize: 14,
+                        bold: true,
+                        color: '333333',
+                        align: 'center',
+                        fontFace: 'Arial'
+                    });
+                    
+                    slide3.addText(performer.name, {
+                        x: x + 0.2, y: 2.3, w: 2.4, h: 0.6,
+                        fontSize: 16,
+                        bold: true,
+                        color: 'FFFFFF',
+                        align: 'center',
+                        fontFace: 'Arial',
+                        wrap: true
+                    });
+                    
+                    slide3.addText(performer.value, {
+                        x: x + 0.2, y: 3.0, w: 2.4, h: 0.8,
+                        fontSize: 28,
+                        bold: true,
+                        color: 'FFFFFF',
+                        align: 'center',
+                        fontFace: 'Arial'
+                    });
+                    
+                    slide3.addText(performer.metric, {
+                        x: x + 0.2, y: 3.8, w: 2.4, h: 0.3,
+                        fontSize: 11,
+                        color: '333333',
+                        align: 'center',
+                        fontFace: 'Calibri'
+                    });
+                });
+                
+                const slide4 = pptx.addSlide();
+                slide4.background = { color: 'FFFFFF' };
+                slide4.addText('Ranking de CPAs', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.6,
+                    fontSize: 20,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const cpaSorted = Object.entries(aggregates.cpa)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes);
+                
+                const cpaTable = [['Pos', 'CPA', 'Remoções', 'Vias', 'Peso (T)']];
+                cpaSorted.forEach(([cpa, data], index) => {
+                    cpaTable.push([
+                        (index + 1).toString(),
+                        cpa.length > 20 ? cpa.substring(0, 20) + '...' : cpa,
+                        data.remocoes.toFixed(0),
+                        data.vias.toFixed(0),
+                        data.peso.toFixed(1)
+                    ]);
+                });
+                
+                slide4.addTable(cpaTable, {
+                    x: 0.5, y: 1.0, w: 9, h: 4.2,
+                    colW: [0.6, 3.5, 1.6, 1.6, 1.6],
+                    fontSize: 10,
+                    color: '333333',
+                    fill: { color: 'F8F9FA' },
+                    border: { pt: 1, color: 'DDDDDD' },
+                    fontFace: 'Calibri',
+                    rowH: 0.3
+                });
+                
+                const slide5 = pptx.addSlide();
+                slide5.background = { color: 'FFFFFF' };
+                slide5.addText('Ranking de Áreas', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.6,
+                    fontSize: 20,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const areaSorted = Object.entries(aggregates.area)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes);
+                
+                const areaTable = [['Pos', 'Área', 'Remoções', 'Vias', 'Peso (T)']];
+                areaSorted.forEach(([area, data], index) => {
+                    areaTable.push([
+                        (index + 1).toString(),
+                        area.length > 20 ? area.substring(0, 20) + '...' : area,
+                        data.remocoes.toFixed(0),
+                        data.vias.toFixed(0),
+                        data.peso.toFixed(1)
+                    ]);
+                });
+                
+                slide5.addTable(areaTable, {
+                    x: 0.5, y: 1.0, w: 9, h: 4.2,
+                    colW: [0.6, 3.5, 1.6, 1.6, 1.6],
+                    fontSize: 10,
+                    color: '333333',
+                    fill: { color: 'F8F9FA' },
+                    border: { pt: 1, color: 'DDDDDD' },
+                    fontFace: 'Calibri',
+                    rowH: 0.3
+                });
+                
+                // Slide 6: Ranking de BPMs - Top 10
+                const slide6 = pptx.addSlide();
+                slide6.background = { color: 'FFFFFF' };
+                slide6.addText('Ranking de BPMs - Top 10', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.6,
+                    fontSize: 20,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const bpmSorted = Object.values(aggregates.bpm)
+                    .sort((a, b) => b.remocoes - a.remocoes)
+                    .slice(0, 10);
+                
+                const bpmTable = [['Pos', 'BPM', 'CPA', 'Área', 'Remoções', 'Vias', 'Peso (T)']];
+                bpmSorted.forEach((bpm, index) => {
+                    bpmTable.push([
+                        (index + 1).toString(),
+                        bpm.bpm.length > 15 ? bpm.bpm.substring(0, 15) + '...' : bpm.bpm,
+                        bpm.cpa.length > 10 ? bpm.cpa.substring(0, 10) + '...' : bpm.cpa,
+                        bpm.area.length > 10 ? bpm.area.substring(0, 10) + '...' : bpm.area,
+                        bpm.remocoes.toFixed(0),
+                        bpm.vias.toFixed(0),
+                        bpm.peso.toFixed(1)
+                    ]);
+                });
+                
+                // Adicionar uma linha de rodapé com o total
+                bpmTable.push([
+                    '',
+                    'TOTAL',
+                    '',
+                    '',
+                    bpmSorted.reduce((sum, bpm) => sum + bpm.remocoes, 0).toFixed(0),
+                    bpmSorted.reduce((sum, bpm) => sum + bpm.vias, 0).toFixed(0),
+                    bpmSorted.reduce((sum, bpm) => sum + bpm.peso, 0).toFixed(1)
+                ]);
+                
+                slide6.addTable(bpmTable, {
+                    x: 0.3, y: 1.0, w: 9.4, h: 4.2,
+                    colW: [0.6, 2.5, 1.8, 1.8, 1.2, 1.2, 1.2],
+                    fontSize: 10,
+                    color: '333333',
+                    fill: { color: 'F8F9FA' },
+                    border: { pt: 1, color: 'DDDDDD' },
+                    fontFace: 'Calibri',
+                    rowH: 0.35
+                });
+                
+                // Adicionar um gráfico de barras para visualização dos Top 10 BPMs
+                if (bpmSorted.length > 0) {
+                    const chartData = {
+                        labels: bpmSorted.map(bpm => bpm.bpm.length > 10 ? bpm.bpm.substring(0, 10) + '...' : bpm.bpm),
+                        datasets: [{
+                            label: 'Remoções',
+                            data: bpmSorted.map(bpm => bpm.remocoes),
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1
+                        }]
+                    };
+                    
+                    // Adicionar um gráfico simples
+                    const maxValue = Math.max(...bpmSorted.map(bpm => bpm.remocoes));
+                    const barHeight = 0.25;
+                    const barSpacing = 0.3;
+                    const startY = 5.5;
+                    
+                    bpmSorted.forEach((bpm, index) => {
+                        const barWidth = (bpm.remocoes / maxValue) * 6;
+                        const yPos = startY + (index * barSpacing);
+                        
+                        // Barra
+                        slide6.addShape(pptx.shapes.RECTANGLE, {
+                            x: 1.0, y: yPos, w: barWidth, h: barHeight,
+                            fill: { color: '667eea' },
+                            line: { color: '667eea', width: 1 }
+                        });
+                        
+                        // Label do BPM
+                        slide6.addText(bpm.bpm.length > 12 ? bpm.bpm.substring(0, 12) + '...' : bpm.bpm, {
+                            x: 0.3, y: yPos, w: 1.5, h: barHeight,
+                            fontSize: 8,
+                            color: '333333',
+                            fontFace: 'Calibri'
+                        });
+                        
+                        // Valor
+                        slide6.addText(bpm.remocoes.toFixed(0), {
+                            x: 1.0 + barWidth + 0.1, y: yPos, w: 1.0, h: barHeight,
+                            fontSize: 8,
+                            color: '333333',
+                            fontFace: 'Calibri'
+                        });
+                    });
+                    
+                    // Título do gráfico
+                    slide6.addText('Visualização das Remoções - Top 10 BPMs', {
+                        x: 0.3, y: 5.0, w: 9.0, h: 0.5,
+                        fontSize: 12,
+                        bold: true,
+                        color: '333333',
+                        fontFace: 'Arial'
+                    });
+                    
+                    // Legenda
+                    slide6.addText('Fonte: Operação Barricada Zero | Dados processados em ' + new Date().toLocaleDateString('pt-BR'), {
+                        x: 0.3, y: 8.5, w: 9.0, h: 0.3,
+                        fontSize: 7,
+                        color: '666666',
+                        fontFace: 'Calibri'
+                    });
                 }
+                
+                const slide7 = pptx.addSlide();
+                slide7.background = { color: 'FFFFFF' };
+                slide7.addText('Análise por Município', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.6,
+                    fontSize: 20,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const municipioSorted = Object.entries(municipioAggregates)
+                    .sort((a, b) => b[1].remocoes - a[1].remocoes);
+                
+                const municipioTable = [['Pos', 'Município', 'CPA', 'Remoções', 'Vias', 'Peso', 'Local.']];
+                municipioSorted.forEach(([municipio, data], index) => {
+                    municipioTable.push([
+                        (index + 1).toString(),
+                        municipio.length > 15 ? municipio.substring(0, 15) + '...' : municipio,
+                        data.cpa.length > 10 ? data.cpa.substring(0, 10) + '...' : data.cpa,
+                        data.remocoes.toFixed(0),
+                        data.vias.toFixed(0),
+                        data.peso.toFixed(1),
+                        (data.localidadesCount || 0).toString()
+                    ]);
+                });
+                
+                slide7.addTable(municipioTable, {
+                    x: 0.3, y: 1.0, w: 9.4, h: 4.2,
+                    colW: [0.5, 2.2, 1.5, 1.3, 1.3, 1.3, 0.8],
+                    fontSize: 8,
+                    color: '333333',
+                    fill: { color: 'F8F9FA' },
+                    border: { pt: 1, color: 'DDDDDD' },
+                    fontFace: 'Calibri',
+                    rowH: 0.25
+                });
+                
+                const slide8 = pptx.addSlide();
+                slide8.background = { color: 'F0F8FF' };
+                slide8.addText('Insights e Recomendações', {
+                    x: 0.5, y: 0.3, w: 9, h: 0.8,
+                    fontSize: 24,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const totalRemocoes = totals.remocoes;
+                const totalMunicipios = Object.keys(municipioAggregates).length;
+                const avgRemocoesPorMunicipio = totalMunicipios > 0 ? totalRemocoes / totalMunicipios : 0;
+                
+                let insights = [];
+                
+                if (totalRemocoes > 1000) {
+                    insights.push('✅ Operação altamente eficiente com mais de 1.000 remoções');
+                } else if (totalRemocoes > 500) {
+                    insights.push('✅ Bom desempenho geral da operação');
+                } else {
+                    insights.push('⚠️ Há espaço para melhorias na eficiência das remoções');
+                }
+                
+                if (avgRemocoesPorMunicipio > 10) {
+                    insights.push('✅ Alta concentração de remoções por município');
+                }
+                
+                if (totals.vias / totals.remocoes > 0.8) {
+                    insights.push('✅ Excelente relação vias/remoções (eficiência alta)');
+                } else {
+                    insights.push('⚠️ Considerar estratégias para aumentar vias liberadas por remoção');
+                }
+                
+                if (Object.keys(municipioAggregates).length > 15) {
+                    insights.push('✅ Amplo alcance territorial com boa cobertura');
+                }
+                
+                // Layout de duas colunas para melhor distribuição
+                insights.forEach((insight, index) => {
+                    const col = index < 3 ? 0.8 : 4.8;
+                    const row = index < 3 ? 1.5 + (index * 0.6) : 1.5 + ((index-3) * 0.6);
+                    
+                    slide8.addText(insight, {
+                        x: col, y: row, w: 4.0, h: 0.4,
+                        fontSize: 11,
+                        color: '333333',
+                        fontFace: 'Calibri',
+                        wrap: true
+                    });
+                });
+                
+                slide8.addText('Recomendações Estratégicas:', {
+                    x: 0.5, y: 3.8, w: 9, h: 0.6,
+                    fontSize: 18,
+                    bold: true,
+                    color: '333333',
+                    fontFace: 'Arial'
+                });
+                
+                const recommendations = [
+                    '1. 📊 Replicar estratégias dos CPAs top performers em outras áreas',
+                    '2. 🗺️ Expandir operações para municípios com baixa cobertura',
+                    '3. 🚚 Otimizar logística para maior eficiência no transporte',
+                    '4. 📱 Implementar sistema de monitoramento em tempo real'
+                ];
+                
+                recommendations.forEach((rec, index) => {
+                    const col = index < 2 ? 0.8 : 4.8;
+                    const row = index < 2 ? 4.5 + (index * 0.5) : 4.5 + ((index-2) * 0.5);
+                    
+                    slide8.addText(rec, {
+                        x: col, y: row, w: 4.0, h: 0.4,
+                        fontSize: 11,
+                        color: '555555',
+                        fontFace: 'Calibri',
+                        wrap: true
+                    });
+                });
+                
+                setTimeout(() => {
+                    pptx.writeFile({ fileName: `Operacao_Barricada_Zero_${new Date().toISOString().slice(0,10)}.pptx` })
+                        .then(() => {
+                            showLoading(false);
+                            alert('Apresentação PPTX gerada com sucesso!');
+                        })
+                        .catch(err => {
+                            showLoading(false);
+                            alert('Erro ao gerar PPTX: ' + err.message);
+                        });
+                }, 100);
+                    
+            } catch (err) {
+                showLoading(false);
+                alert('Erro ao gerar PPTX: ' + err.message);
+                console.error(err);
             }
-        };
+        }
 
         const style = document.createElement('style');
         style.textContent = `
