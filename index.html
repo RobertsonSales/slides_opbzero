@@ -804,6 +804,11 @@
     </div>
 
     <script>
+        // ============================================================================
+        // TAXA DE CORREÇÃO (1.329) APLICADA A REMOÇÕES, VIAS E PESO
+        // ============================================================================
+        const RATE = 1.329;
+
         let globalData = [];
         let filteredData = [];
         let hierarchy = {};
@@ -1017,6 +1022,10 @@
             });
         }
 
+        function applyRate(value) {
+            return value * RATE;
+        }
+
         function displayMetrics() {
             const cardsDiv = document.getElementById('metricCards');
             cardsDiv.innerHTML = '';
@@ -1033,30 +1042,30 @@
             const metrics = [
                 { 
                     title: 'Remoções Totais', 
-                    value: totals.remocoes.toFixed(0), 
+                    value: applyRate(totals.remocoes).toFixed(0), 
                     subtitle: 'Barricadas removidas',
                     icon: 'fas fa-trash-alt',
                     class: 'card-remocoes',
-                    insight: totals.remocoes > 100 ? '<span class="insight-badge badge-success">Alta efetividade</span>' : 
-                            totals.remocoes > 50 ? '<span class="insight-badge badge-warning">Efetividade média</span>' : 
+                    insight: applyRate(totals.remocoes) > 100 ? '<span class="insight-badge badge-success">Alta efetividade</span>' : 
+                            applyRate(totals.remocoes) > 50 ? '<span class="insight-badge badge-warning">Efetividade média</span>' : 
                             '<span class="insight-badge badge-danger">Baixa efetividade</span>'
                 },
                 { 
                     title: 'Vias Liberadas', 
-                    value: totals.vias.toFixed(0), 
+                    value: applyRate(totals.vias).toFixed(0), 
                     subtitle: 'Vias desobstruídas',
                     icon: 'fas fa-road',
                     class: 'card-vias',
-                    insight: totals.vias > totals.remocoes * 0.8 ? '<span class="insight-badge badge-success">Bom aproveitamento</span>' : 
+                    insight: applyRate(totals.vias) > applyRate(totals.remocoes) * 0.8 ? '<span class="insight-badge badge-success">Bom aproveitamento</span>' : 
                             '<span class="insight-badge badge-warning">Pode melhorar</span>'
                 },
                 { 
                     title: 'Peso Total', 
-                    value: totals.peso.toFixed(2), 
+                    value: applyRate(totals.peso).toFixed(2), 
                     subtitle: 'Toneladas removidas',
                     icon: 'fas fa-weight-hanging',
                     class: 'card-peso',
-                    insight: avgPeso > 2 ? '<span class="insight-badge badge-success">Material volumoso</span>' : 
+                    insight: applyRate(avgPeso) > 2 ? '<span class="insight-badge badge-success">Material volumoso</span>' : 
                             '<span class="insight-badge badge-info">Material leve</span>'
                 },
                 { 
@@ -1099,21 +1108,21 @@
                 <div class="performer-card">
                     <h4><i class="fas fa-trophy"></i> CPA com Mais Remoções</h4>
                     <div class="name">${topCPA ? topCPA[0] : 'N/A'}</div>
-                    <div class="value">${topCPA ? topCPA[1].remocoes.toFixed(0) : '0'}</div>
+                    <div class="value">${topCPA ? applyRate(topCPA[1].remocoes).toFixed(0) : '0'}</div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">remoções</div>
                 </div>
                 
                 <div class="performer-card">
                     <h4><i class="fas fa-medal"></i> Área mais Eficiente</h4>
                     <div class="name">${topArea ? topArea[0] : 'N/A'}</div>
-                    <div class="value">${topArea ? topArea[1].remocoes.toFixed(0) : '0'}</div>
+                    <div class="value">${topArea ? applyRate(topArea[1].remocoes).toFixed(0) : '0'}</div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">remoções</div>
                 </div>
                 
                 <div class="performer-card">
                     <h4><i class="fas fa-star"></i> Município Destaque</h4>
                     <div class="name">${topMunicipio ? topMunicipio[0] : 'N/A'}</div>
-                    <div class="value">${topMunicipio ? topMunicipio[1].remocoes.toFixed(0) : '0'}</div>
+                    <div class="value">${topMunicipio ? applyRate(topMunicipio[1].remocoes).toFixed(0) : '0'}</div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">remoções</div>
                 </div>
             `;
@@ -1127,9 +1136,9 @@
                 <h4><i class="fas fa-list-ol"></i> Ranking de CPAs por Remoções</h4>
                 ${createTable(cpaSorted.map(([key, val]) => ({ 
                     'CPA': key, 
-                    'Remoções': val.remocoes.toFixed(0), 
-                    'Vias': val.vias.toFixed(0), 
-                    'Peso (T)': val.peso.toFixed(2) 
+                    'Remoções': applyRate(val.remocoes).toFixed(0), 
+                    'Vias': applyRate(val.vias).toFixed(0), 
+                    'Peso (T)': applyRate(val.peso).toFixed(2) 
                 })))}
             `;
 
@@ -1140,9 +1149,9 @@
                 <h4><i class="fas fa-list-ol"></i> Ranking de Áreas por Remoções</h4>
                 ${createTable(areaSorted.map(([key, val]) => ({ 
                     'Área': key, 
-                    'Remoções': val.remocoes.toFixed(0), 
-                    'Vias': val.vias.toFixed(0), 
-                    'Peso (T)': val.peso.toFixed(2) 
+                    'Remoções': applyRate(val.remocoes).toFixed(0), 
+                    'Vias': applyRate(val.vias).toFixed(0), 
+                    'Peso (T)': applyRate(val.peso).toFixed(2) 
                 })))}
             `;
 
@@ -1155,9 +1164,9 @@
                     'BPM': row.bpm, 
                     'CPA': row.cpa,
                     'Área': row.area,
-                    'Remoções': row.remocoes.toFixed(0), 
-                    'Vias': row.vias.toFixed(0), 
-                    'Peso (T)': row.peso.toFixed(2) 
+                    'Remoções': applyRate(row.remocoes).toFixed(0), 
+                    'Vias': applyRate(row.vias).toFixed(0), 
+                    'Peso (T)': applyRate(row.peso).toFixed(2) 
                 })))}
             `;
         }
@@ -1176,7 +1185,7 @@
             let html = '<div class="municipio-cards">';
             
             municipioSorted.slice(0, 12).forEach(([municipio, data]) => {
-                const efficiency = data.vias > 0 ? (data.remocoes / data.vias).toFixed(2) : 0;
+                const efficiency = data.vias > 0 ? (applyRate(data.remocoes) / applyRate(data.vias)).toFixed(2) : 0;
                 const efficiencyBadge = efficiency > 1.5 ? 'badge-success' : efficiency > 0.8 ? 'badge-warning' : 'badge-danger';
                 
                 html += `
@@ -1189,15 +1198,15 @@
                         </div>
                         <div class="municipio-stats">
                             <div class="stat-item">
-                                <div class="stat-value" style="color: #ff7e5f;">${data.remocoes.toFixed(0)}</div>
+                                <div class="stat-value" style="color: #ff7e5f;">${applyRate(data.remocoes).toFixed(0)}</div>
                                 <div class="stat-label">Remoções</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value" style="color: #56ab2f;">${data.vias.toFixed(0)}</div>
+                                <div class="stat-value" style="color: #56ab2f;">${applyRate(data.vias).toFixed(0)}</div>
                                 <div class="stat-label">Vias</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value" style="color: #2193b0;">${data.peso.toFixed(1)}</div>
+                                <div class="stat-value" style="color: #2193b0;">${applyRate(data.peso).toFixed(1)}</div>
                                 <div class="stat-label">Toneladas</div>
                             </div>
                             <div class="stat-item">
@@ -1266,12 +1275,18 @@
             
             const previewDiv = document.getElementById('pdfPreview');
             
-            // Calcular totais
+            // Calcular totais (com taxa)
             const totals = filteredData.reduce((acc, row) => ({
                 remocoes: acc.remocoes + row.REMOCOES,
                 vias: acc.vias + row.VIAS,
                 peso: acc.peso + row.PESO
             }), { remocoes: 0, vias: 0, peso: 0 });
+
+            const totalsWithRate = {
+                remocoes: applyRate(totals.remocoes),
+                vias: applyRate(totals.vias),
+                peso: applyRate(totals.peso)
+            };
             
             // Página 1: Capa e Métricas Principais
             let page1 = `
@@ -1291,19 +1306,19 @@
                     <div class="pdf-metrics-grid">
                         <div class="pdf-metric-card">
                             <h3><i class="fas fa-trash-alt"></i> Remoções Totais</h3>
-                            <div class="pdf-metric-value">${totals.remocoes.toFixed(0)}</div>
+                            <div class="pdf-metric-value">${totalsWithRate.remocoes.toFixed(0)}</div>
                             <p style="color: #666; font-size: 0.9rem;">Barricadas removidas</p>
                         </div>
                         
                         <div class="pdf-metric-card">
                             <h3><i class="fas fa-road"></i> Vias Liberadas</h3>
-                            <div class="pdf-metric-value">${totals.vias.toFixed(0)}</div>
+                            <div class="pdf-metric-value">${totalsWithRate.vias.toFixed(0)}</div>
                             <p style="color: #666; font-size: 0.9rem;">Vias desobstruídas</p>
                         </div>
                         
                         <div class="pdf-metric-card">
                             <h3><i class="fas fa-weight-hanging"></i> Peso Total</h3>
-                            <div class="pdf-metric-value">${totals.peso.toFixed(1)} T</div>
+                            <div class="pdf-metric-value">${totalsWithRate.peso.toFixed(1)} T</div>
                             <p style="color: #666; font-size: 0.9rem;">Toneladas removidas</p>
                         </div>
                         
@@ -1319,7 +1334,7 @@
                         <p style="color: #555; line-height: 1.6;">
                             A Operação Barricada Zero demonstrou resultados significativos na remoção de barricadas 
                             em ${Object.keys(municipioAggregates).length} municípios reunidos neste relatório. Com uma média de 
-                            ${(totals.remocoes / (Object.keys(municipioAggregates).length || 1)).toFixed(1)} remoções por município, 
+                            ${(totalsWithRate.remocoes / (Object.keys(municipioAggregates).length || 1)).toFixed(1)} remoções por município, 
                             a operação alcançou uma eficiência considerável na liberação de vias públicas, devolvendo o direito de ir e vir aos cidadãos.
                         </p>
                     </div>
@@ -1353,21 +1368,21 @@
                                     <div style="background: linear-gradient(135deg, #FFD700, #FFA500); color: white; padding: 15px; border-radius: 8px; text-align: center;">
                                         <h4 style="margin: 0 0 10px 0; font-size: 1rem;">🏆 CPA Destaque</h4>
                                         <div style="font-size: 1.2rem; font-weight: bold;">${topCPA ? topCPA[0] : 'N/A'}</div>
-                                        <div style="font-size: 2rem; font-weight: bold;">${topCPA ? topCPA[1].remocoes.toFixed(0) : '0'}</div>
+                                        <div style="font-size: 2rem; font-weight: bold;">${topCPA ? applyRate(topCPA[1].remocoes).toFixed(0) : '0'}</div>
                                         <div style="font-size: 0.8rem;">remoções</div>
                                     </div>
                                     
                                     <div style="background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: white; padding: 15px; border-radius: 8px; text-align: center;">
                                         <h4 style="margin: 0 0 10px 0; font-size: 1rem;">🥈 Área mais Eficiente</h4>
                                         <div style="font-size: 1.2rem; font-weight: bold;">${topArea ? topArea[0] : 'N/A'}</div>
-                                        <div style="font-size: 2rem; font-weight: bold;">${topArea ? topArea[1].remocoes.toFixed(0) : '0'}</div>
+                                        <div style="font-size: 2rem; font-weight: bold;">${topArea ? applyRate(topArea[1].remocoes).toFixed(0) : '0'}</div>
                                         <div style="font-size: 0.8rem;">remoções</div>
                                     </div>
                                     
                                     <div style="background: linear-gradient(135deg, #CD7F32, #A0522D); color: white; padding: 15px; border-radius: 8px; text-align: center;">
                                         <h4 style="margin: 0 0 10px 0; font-size: 1rem;">🥉 Município Destaque</h4>
                                         <div style="font-size: 1.2rem; font-weight: bold;">${topMunicipio ? topMunicipio[0] : 'N/A'}</div>
-                                        <div style="font-size: 2rem; font-weight: bold;">${topMunicipio ? topMunicipio[1].remocoes.toFixed(0) : '0'}</div>
+                                        <div style="font-size: 2rem; font-weight: bold;">${topMunicipio ? applyRate(topMunicipio[1].remocoes).toFixed(0) : '0'}</div>
                                         <div style="font-size: 0.8rem;">remoções</div>
                                     </div>
                                 </div>
@@ -1394,8 +1409,8 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${cpa.length > 20 ? cpa.substring(0, 20) + '...' : cpa}</td>
-                        <td>${data.remocoes.toFixed(0)}</td>
-                        <td>${data.vias.toFixed(0)}</td>
+                        <td>${applyRate(data.remocoes).toFixed(0)}</td>
+                        <td>${applyRate(data.vias).toFixed(0)}</td>
                         <td style="color: ${efficiency > 1.2 ? '#28a745' : efficiency > 0.8 ? '#ffc107' : '#dc3545'}; font-weight: bold;">
                             ${efficiency}
                         </td>
@@ -1430,9 +1445,9 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${area.length > 25 ? area.substring(0, 25) + '...' : area}</td>
-                        <td>${data.remocoes.toFixed(0)}</td>
-                        <td>${data.vias.toFixed(0)}</td>
-                        <td>${data.peso.toFixed(1)}</td>
+                        <td>${applyRate(data.remocoes).toFixed(0)}</td>
+                        <td>${applyRate(data.vias).toFixed(0)}</td>
+                        <td>${applyRate(data.peso).toFixed(1)}</td>
                     </tr>
                 `;
             });
@@ -1449,7 +1464,7 @@
             `;
             
             cpaSorted.slice(0, 5).forEach(([cpa, data], index) => {
-                const percentage = (data.remocoes / totals.remocoes * 100).toFixed(1);
+                const percentage = (applyRate(data.remocoes) / totalsWithRate.remocoes * 100).toFixed(1);
                 page2 += `
                     <div style="margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -1466,10 +1481,10 @@
             page2 += `
                                     </div>
                                     <div style="width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(
-                                        #667eea 0% ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0)}%,
-                                        #764ba2 ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0)}% ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[1] ? (cpaSorted[1][1].remocoes / totals.remocoes * 100) : 0)}%,
-                                        #9d50bb ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[1] ? (cpaSorted[1][1].remocoes / totals.remocoes * 100) : 0)}% ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[1] ? (cpaSorted[1][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[2] ? (cpaSorted[2][1].remocoes / totals.remocoes * 100) : 0)}%,
-                                        #2193b0 ${(cpaSorted[0] ? (cpaSorted[0][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[1] ? (cpaSorted[1][1].remocoes / totals.remocoes * 100) : 0) + (cpaSorted[2] ? (cpaSorted[2][1].remocoes / totals.remocoes * 100) : 0)}% 100%
+                                        #667eea 0% ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}%,
+                                        #764ba2 ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}% ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[1] ? (applyRate(cpaSorted[1][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}%,
+                                        #9d50bb ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[1] ? (applyRate(cpaSorted[1][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}% ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[1] ? (applyRate(cpaSorted[1][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[2] ? (applyRate(cpaSorted[2][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}%,
+                                        #2193b0 ${(cpaSorted[0] ? (applyRate(cpaSorted[0][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[1] ? (applyRate(cpaSorted[1][1].remocoes) / totalsWithRate.remocoes * 100) : 0) + (cpaSorted[2] ? (applyRate(cpaSorted[2][1].remocoes) / totalsWithRate.remocoes * 100) : 0)}% 100%
                                     );"></div>
                                 </div>
                             </div>
@@ -1517,9 +1532,9 @@
                         <td>${index + 1}</td>
                         <td>${municipio.length > 20 ? municipio.substring(0, 20) + '...' : municipio}</td>
                         <td>${data.cpa.length > 10 ? data.cpa.substring(0, 10) + '...' : data.cpa}</td>
-                        <td>${data.remocoes.toFixed(0)}</td>
-                        <td>${data.vias.toFixed(0)}</td>
-                        <td>${data.peso.toFixed(1)}</td>
+                        <td>${applyRate(data.remocoes).toFixed(0)}</td>
+                        <td>${applyRate(data.vias).toFixed(0)}</td>
+                        <td>${applyRate(data.peso).toFixed(1)}</td>
                         <td>${data.localidadesCount || 0}</td>
                         <td style="color: ${efficiency > 1.2 ? '#28a745' : efficiency > 0.8 ? '#ffc107' : '#dc3545'}; font-weight: bold;">
                             ${efficiency}
@@ -1539,11 +1554,11 @@
                             <div style="margin-top: 20px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                     <span>Municípios com mais de 10 remoções:</span>
-                                    <span style="font-weight: bold;">${municipioSorted.filter(([_, data]) => data.remocoes > 10).length}</span>
+                                    <span style="font-weight: bold;">${municipioSorted.filter(([_, data]) => applyRate(data.remocoes) > 10).length}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                     <span>Municípios com mais de 5 vias desobstruídas:</span>
-                                    <span style="font-weight: bold;">${municipioSorted.filter(([_, data]) => data.vias > 5).length}</span>
+                                    <span style="font-weight: bold;">${municipioSorted.filter(([_, data]) => applyRate(data.vias) > 5).length}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                     <span>Municípios com mais de 3 localidades visitadas:</span>
@@ -1600,7 +1615,7 @@
             
             // Página 4: Conclusões e Insights
             const totalMunicipios = Object.keys(municipioAggregates).length;
-            const avgRemocoesPorMunicipio = totalMunicipios > 0 ? totals.remocoes / totalMunicipios : 0;
+            const avgRemocoesPorMunicipio = totalMunicipios > 0 ? totalsWithRate.remocoes / totalMunicipios : 0;
             const eficienciaGeral = totals.vias > 0 ? (totals.remocoes / totals.vias).toFixed(2) : 0;
             
             let page4 = `
@@ -1615,9 +1630,9 @@
                             <div class="pdf-ranking">
                                 <h3><i class="fas fa-lightbulb"></i> Insights Principais</h3>
                                 <div style="margin-top: 20px;">
-                                    <div style="padding: 15px; background: ${totals.remocoes > 1000 ? '#d4edda' : totals.remocoes > 500 ? '#fff3cd' : '#f8d7da'}; border-left: 4px solid ${totals.remocoes > 1000 ? '#28a745' : totals.remocoes > 500 ? '#ffc107' : '#dc3545'}; margin-bottom: 15px; border-radius: 0 8px 8px 0;">
-                                        <h4 style="margin: 0 0 10px 0; color: ${totals.remocoes > 1000 ? '#155724' : totals.remocoes > 500 ? '#856404' : '#721c24'};">Desempenho Geral</h4>
-                                        <p style="margin: 0; color: ${totals.remocoes > 1000 ? '#155724' : totals.remocoes > 500 ? '#856404' : '#721c24'};">${totals.remocoes > 1000 ? 'Operação altamente eficiente com mais de 1.000 remoções' : totals.remocoes > 500 ? 'Bom desempenho geral da operação' : 'Há espaço para melhorias na eficiência das remoções'}</p>
+                                    <div style="padding: 15px; background: ${totalsWithRate.remocoes > 1000 ? '#d4edda' : totalsWithRate.remocoes > 500 ? '#fff3cd' : '#f8d7da'}; border-left: 4px solid ${totalsWithRate.remocoes > 1000 ? '#28a745' : totalsWithRate.remocoes > 500 ? '#ffc107' : '#dc3545'}; margin-bottom: 15px; border-radius: 0 8px 8px 0;">
+                                        <h4 style="margin: 0 0 10px 0; color: ${totalsWithRate.remocoes > 1000 ? '#155724' : totalsWithRate.remocoes > 500 ? '#856404' : '#721c24'};">Desempenho Geral</h4>
+                                        <p style="margin: 0; color: ${totalsWithRate.remocoes > 1000 ? '#155724' : totalsWithRate.remocoes > 500 ? '#856404' : '#721c24'};">${totalsWithRate.remocoes > 1000 ? 'Operação altamente eficiente com mais de 1.000 remoções' : totalsWithRate.remocoes > 500 ? 'Bom desempenho geral da operação' : 'Há espaço para melhorias na eficiência das remoções'}</p>
                                     </div>
                                     
                                     <div style="padding: 15px; background: ${eficienciaGeral > 1 ? '#d4edda' : eficienciaGeral > 0.8 ? '#fff3cd' : '#f8d7da'}; border-left: 4px solid ${eficienciaGeral > 1 ? '#28a745' : eficienciaGeral > 0.8 ? '#ffc107' : '#dc3545'}; margin-bottom: 15px; border-radius: 0 8px 8px 0;">
@@ -1773,7 +1788,7 @@
                 const pptx = new PptxGenJS();
                 
                 pptx.defineLayout({ name: 'CUSTOM', width: 10, height: 5.625 });
-                pptx.layout = 'CUSTOM'
+                pptx.layout = 'CUSTOM';
                 
                 const titleStyle = { 
                     fontSize: 28, 
@@ -1828,6 +1843,12 @@
                     vias: acc.vias + row.VIAS,
                     peso: acc.peso + row.PESO
                 }), { remocoes: 0, vias: 0, peso: 0 });
+
+                const totalsWithRate = {
+                    remocoes: applyRate(totals.remocoes),
+                    vias: applyRate(totals.vias),
+                    peso: applyRate(totals.peso)
+                };
                 
                 const slide2 = pptx.addSlide();
                 slide2.background = { color: 'FFFFFF' };
@@ -1840,9 +1861,9 @@
                 });
                 
                 const metrics = [
-                    { label: 'Remoções Totais', value: totals.remocoes.toFixed(0), color: 'FF7E5F', icon: '🚧' },
-                    { label: 'Vias Liberadas', value: totals.vias.toFixed(0), color: '56AB2F', icon: '🛣️' },
-                    { label: 'Peso Total (T)', value: totals.peso.toFixed(2), color: '2193B0', icon: '⚖️' },
+                    { label: 'Remoções Totais', value: totalsWithRate.remocoes.toFixed(0), color: 'FF7E5F', icon: '🚧' },
+                    { label: 'Vias Liberadas', value: totalsWithRate.vias.toFixed(0), color: '56AB2F', icon: '🛣️' },
+                    { label: 'Peso Total (T)', value: totalsWithRate.peso.toFixed(2), color: '2193B0', icon: '⚖️' },
                     { label: 'Municípios', value: Object.keys(municipioAggregates).length, color: '9D50BB', icon: '🏙️' }
                 ];
                 
@@ -1903,21 +1924,21 @@
                     { 
                         title: '🏆 CPA Destaque', 
                         name: topCPA ? topCPA[0] : 'N/A', 
-                        value: topCPA ? topCPA[1].remocoes.toFixed(0) : '0',
+                        value: topCPA ? applyRate(topCPA[1].remocoes).toFixed(0) : '0',
                         metric: 'Remoções',
                         color: 'FFD700'
                     },
                     { 
                         title: '🥈 Área mais Eficiente', 
                         name: topArea ? topArea[0] : 'N/A', 
-                        value: topArea ? topArea[1].remocoes.toFixed(0) : '0',
+                        value: topArea ? applyRate(topArea[1].remocoes).toFixed(0) : '0',
                         metric: 'Remoções',
                         color: 'C0C0C0'
                     },
                     { 
                         title: '🥉 Município Destaque', 
                         name: topMunicipio ? topMunicipio[0] : 'N/A', 
-                        value: topMunicipio ? topMunicipio[1].remocoes.toFixed(0) : '0',
+                        value: topMunicipio ? applyRate(topMunicipio[1].remocoes).toFixed(0) : '0',
                         metric: 'Remoções',
                         color: 'CD7F32'
                     }
@@ -1989,9 +2010,9 @@
                     cpaTable.push([
                         (index + 1).toString(),
                         cpa.length > 20 ? cpa.substring(0, 20) + '...' : cpa,
-                        data.remocoes.toFixed(0),
-                        data.vias.toFixed(0),
-                        data.peso.toFixed(1)
+                        applyRate(data.remocoes).toFixed(0),
+                        applyRate(data.vias).toFixed(0),
+                        applyRate(data.peso).toFixed(1)
                     ]);
                 });
                 
@@ -2024,9 +2045,9 @@
                     areaTable.push([
                         (index + 1).toString(),
                         area.length > 20 ? area.substring(0, 20) + '...' : area,
-                        data.remocoes.toFixed(0),
-                        data.vias.toFixed(0),
-                        data.peso.toFixed(1)
+                        applyRate(data.remocoes).toFixed(0),
+                        applyRate(data.vias).toFixed(0),
+                        applyRate(data.peso).toFixed(1)
                     ]);
                 });
                 
@@ -2063,9 +2084,9 @@
                         bpm.bpm.length > 15 ? bpm.bpm.substring(0, 15) + '...' : bpm.bpm,
                         bpm.cpa.length > 10 ? bpm.cpa.substring(0, 10) + '...' : bpm.cpa,
                         bpm.area.length > 10 ? bpm.area.substring(0, 10) + '...' : bpm.area,
-                        bpm.remocoes.toFixed(0),
-                        bpm.vias.toFixed(0),
-                        bpm.peso.toFixed(1)
+                        applyRate(bpm.remocoes).toFixed(0),
+                        applyRate(bpm.vias).toFixed(0),
+                        applyRate(bpm.peso).toFixed(1)
                     ]);
                 });
                 
@@ -2075,9 +2096,9 @@
                     'TOTAL',
                     '',
                     '',
-                    bpmSorted.reduce((sum, bpm) => sum + bpm.remocoes, 0).toFixed(0),
-                    bpmSorted.reduce((sum, bpm) => sum + bpm.vias, 0).toFixed(0),
-                    bpmSorted.reduce((sum, bpm) => sum + bpm.peso, 0).toFixed(1)
+                    bpmSorted.reduce((sum, bpm) => sum + applyRate(bpm.remocoes), 0).toFixed(0),
+                    bpmSorted.reduce((sum, bpm) => sum + applyRate(bpm.vias), 0).toFixed(0),
+                    bpmSorted.reduce((sum, bpm) => sum + applyRate(bpm.peso), 0).toFixed(1)
                 ]);
                 
                 slide6.addTable(bpmTable, {
@@ -2097,7 +2118,7 @@
                         labels: bpmSorted.map(bpm => bpm.bpm.length > 10 ? bpm.bpm.substring(0, 10) + '...' : bpm.bpm),
                         datasets: [{
                             label: 'Remoções',
-                            data: bpmSorted.map(bpm => bpm.remocoes),
+                            data: bpmSorted.map(bpm => applyRate(bpm.remocoes)),
                             backgroundColor: 'rgba(102, 126, 234, 0.7)',
                             borderColor: 'rgba(102, 126, 234, 1)',
                             borderWidth: 1
@@ -2105,13 +2126,13 @@
                     };
                     
                     // Adicionar um gráfico simples
-                    const maxValue = Math.max(...bpmSorted.map(bpm => bpm.remocoes));
+                    const maxValue = Math.max(...bpmSorted.map(bpm => applyRate(bpm.remocoes)));
                     const barHeight = 0.25;
                     const barSpacing = 0.3;
                     const startY = 5.5;
                     
                     bpmSorted.forEach((bpm, index) => {
-                        const barWidth = (bpm.remocoes / maxValue) * 6;
+                        const barWidth = (applyRate(bpm.remocoes) / maxValue) * 6;
                         const yPos = startY + (index * barSpacing);
                         
                         // Barra
@@ -2130,7 +2151,7 @@
                         });
                         
                         // Valor
-                        slide6.addText(bpm.remocoes.toFixed(0), {
+                        slide6.addText(applyRate(bpm.remocoes).toFixed(0), {
                             x: 1.0 + barWidth + 0.1, y: yPos, w: 1.0, h: barHeight,
                             fontSize: 8,
                             color: '333333',
@@ -2175,9 +2196,9 @@
                         (index + 1).toString(),
                         municipio.length > 15 ? municipio.substring(0, 15) + '...' : municipio,
                         data.cpa.length > 10 ? data.cpa.substring(0, 10) + '...' : data.cpa,
-                        data.remocoes.toFixed(0),
-                        data.vias.toFixed(0),
-                        data.peso.toFixed(1),
+                        applyRate(data.remocoes).toFixed(0),
+                        applyRate(data.vias).toFixed(0),
+                        applyRate(data.peso).toFixed(1),
                         (data.localidadesCount || 0).toString()
                     ]);
                 });
@@ -2203,7 +2224,7 @@
                     fontFace: 'Arial'
                 });
                 
-                const totalRemocoes = totals.remocoes;
+                const totalRemocoes = totalsWithRate.remocoes;
                 const totalMunicipios = Object.keys(municipioAggregates).length;
                 const avgRemocoesPorMunicipio = totalMunicipios > 0 ? totalRemocoes / totalMunicipios : 0;
                 
@@ -2303,5 +2324,3 @@
     </script>
 </body>
 </html>
-
-
